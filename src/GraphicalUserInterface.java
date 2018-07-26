@@ -1,9 +1,10 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.Vector;
+
 
 /**
  * Class GraphicalUserInterface creates a user interface to work with the application and launches it
@@ -80,33 +81,33 @@ public class GraphicalUserInterface {
     public void maketable() {
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        String[] tblHead={"Employee ID #1","Employee ID #2","Project ID","Days worked"};
+        DefaultTableModel dtm=new DefaultTableModel(tblHead,0);
+        JTable tbl=new JTable(dtm);
 
         Employee employee = null;
+        Object[] rowData = new Object[4];
 
-        String str = employee.resultList.get(0).employeeId;
-        String str2 = employee.resultList.get(1).employeeId;
-        String str3 = employee.resultList.get(0).projectId;
-        Double str4 = employee.resultList.get(0).sumDays;
-        int change = str4.intValue();
+        int index=0;
+        Long max = employee.resultList.get(0).sumDaysWorkded;
 
-        Vector<String> rowOne = new Vector<String>();
-        rowOne.addElement(str);
-        rowOne.addElement(str2);
-        rowOne.addElement(str3);
-        rowOne.addElement(Integer.toString(change));
+        for(int i=0; i<employee.resultList.size(); i++){
+            if(employee.resultList.get(i).sumDaysWorkded > max){
+                max = employee.resultList.get(i).sumDaysWorkded;
+                index = i;
+            }
+        }
 
-        Vector<Vector> rowData = new Vector<Vector>();
-        rowData.addElement(rowOne);
+        for(int i=0; i<employee.resultList.size(); i++) {
 
-        Vector<String> columnNames = new Vector<String>();
-        columnNames.addElement("Employee ID #1");
-        columnNames.addElement("Employee ID #2");
-        columnNames.addElement("Project ID");
-        columnNames.addElement("Days worked");
+            rowData[0] = employee.resultList.get(i).empIdNew1;
+            rowData[1] = employee.resultList.get(i).empIdnew2;
+            rowData[2] = employee.resultList.get(i).projectIdNew;
+            rowData[3] = employee.resultList.get(index).sumDaysWorkded;
+            dtm.addRow(rowData);
 
-        JTable table = new JTable(rowData, columnNames);
-
-        JScrollPane scrollPane = new JScrollPane(table);
+        }
+        JScrollPane scrollPane = new JScrollPane(tbl);
 
         frame.add(scrollPane, BorderLayout.CENTER);
         frame.setSize(800, 400);

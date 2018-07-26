@@ -2,9 +2,10 @@ import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
+
 
 /**
  * Class OpenFile reads the file and processes the read information
@@ -33,7 +34,7 @@ public class OpenFile {
         String line = null;
         Employee employee = null;
         ArrayList<Employee> EmployeesList = new ArrayList<>();
-        SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-HH-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         if(fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION){
             //get the file
@@ -41,6 +42,7 @@ public class OpenFile {
 
             BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
 
+            System.out.println("The contents of the file");
             while ((line = bufferedReader.readLine()) != null) {
                 String[] values = line.split(", ");
                 employeeId = values[0];
@@ -48,24 +50,34 @@ public class OpenFile {
                 dateFrom = values[2];
                 dateTo = values[3];
                 if(dateTo.equals("NULL")){
-                    Date date = new Date();
-                    dateTo = dateFormat.format(date);
+                    LocalDate today = LocalDate.now();
+                    dateTo = today.toString();
                 }
                 EmployeesList.add(employee = new Employee(employeeId, projectId, dateFrom, dateTo));
                 System.out.println(employeeId + " " + projectId + " " + dateFrom + " " + dateTo);
             }
 
+
+            employee.sumEquals(EmployeesList);
+
             employee.findCommonProjects(EmployeesList);
+
             employee.removeRepeatedElement();
+
             employee.sortedByProjectIdAndByDaysWorked();
-            employee.sumDaysWorked();
 
-            System.out.println();
-            System.out.println("Processed file information");
+            System.out.println("Common days worked");
+            employee.findCommonDaysWorked();
 
-            employee.printInformation();
-            System.out.println();
-            employee.findingPairOfEmployees();
+            employee.sumDaysWorkedTogether();
+
+            employee.sortByDaysWorked();
+
+
+            employee.fintPairEmployees();
+
+            System.out.println("Finding the pair of workers which have worked together for the longest time and their common projects");
+            employee.printResultList();
         }
     }
 }

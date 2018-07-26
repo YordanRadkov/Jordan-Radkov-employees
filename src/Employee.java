@@ -1,5 +1,7 @@
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
@@ -10,18 +12,29 @@ public class Employee {
 
     // Declare variable
     public String employeeId;
-    String projectId;
-    String dateFromStr;
-    String dateToStr;
-    public static SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd"); // format for date
+    public String projectId;
+    public String dateFromStr;
+    public String dateToStr;
+    public DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd"); // format for date
+    public LocalDate dateFrom;
+    public LocalDate dateTo;
 
-    public Date dateFrom;
-    public Date dateTo;
-    public long different;  //variable for different in two dates
-    public float days;      //variable for the days that an employee worked
+
+    public long days;      //variable for the days that an employee worked
     public double sumDays;  //variable for total days worked together
     public ArrayList<Employee> commonProjectsList = new ArrayList<>(); // list for common projects
     public static ArrayList<Employee> resultList = new ArrayList<>();  // list for the employees who have worked the most together
+    public Employee emp;
+    public static ArrayList<Employee> employeesList = new ArrayList<>();
+
+    //variables vor new constructor
+    public String empIdNew1; // variable for id for first employee
+    public String empIdnew2; // variable for id for second employee
+    public String projectIdNew; // variable for id for project
+    public Long sumDaysWorkded; // variable for sum for days worked
+
+
+
 
     /**
      * Constructor
@@ -31,29 +44,55 @@ public class Employee {
      * @param dateToStr
      */
     public Employee(String employeeId, String projectId, String dateFromStr, String dateToStr) {
+
         this.employeeId = employeeId;
         this.projectId = projectId;
         this.dateFromStr = dateFromStr;
         this.dateToStr = dateToStr;
-        this.sumDays =0;
+        this.sumDays = 0;
 
 
-        try {
-            this.dateFrom = dateFormat.parse(dateFromStr);
-        } catch (ParseException e) {
-            System.out.println("Incorrect date");
-        }
 
-        try {
-            this.dateTo = dateFormat.parse(dateToStr);
-        } catch (ParseException e) {
-            System.out.println("Incorrect date");
-        }
-
-        this.different = dateTo.getTime() - dateFrom.getTime(); //different in milliseconds
-        this.days = (different / (1000*60*60*24));   // convert milliseconds in days
+        this.dateFrom = LocalDate.parse(dateFromStr, formatter);
+        this.dateTo = LocalDate.parse(dateToStr, formatter);
+        this.days = ChronoUnit.DAYS.between(dateFrom, dateTo);
     }//end constructor
 
+
+    /**
+     * constructor for employee pairs
+     * @param empIdNew1
+     * @param empIdnew2
+     * @param projectIdNew
+     * @param sumDaysWorkded
+     */
+    public Employee(String empIdNew1, String empIdnew2, String projectIdNew, Long sumDaysWorkded) {
+
+        this.empIdNew1 = empIdNew1;
+        this.empIdnew2 = empIdnew2;
+        this.projectIdNew = projectIdNew;
+        this.sumDaysWorkded = sumDaysWorkded;
+
+    }
+
+    /**
+     * Sum the days worked for employees which work in one project more than one
+     * removes the repeating element
+     * @param list
+     */
+
+    public void sumEquals(ArrayList<Employee> list) {
+
+        for (int i = 0; i < list.size(); i++) {
+            for (int j = i + 1; j < list.size(); j++) {
+                if ((list.get(i).employeeId.equals(list.get(j).employeeId)) && list.get(i).projectId.equals(list.get(j).projectId)) {
+                    list.get(i).days = list.get(i).days + list.get(j).days;
+                    list.remove(j);
+                }
+            }
+        }
+        
+    }//end 
 
     /**
      *
@@ -97,64 +136,106 @@ public class Employee {
     }//end sortedByProjectIdAndByDaysWorked()
 
     /**
-     * Sums of days worked for a pair of employees worked together on a joint project.
-     * Because they are sorted by projects and days
-     * we only sum up the neighboring employees by days worked
-     * and record the sum with the employee with more days worked
+     * find days worked together
+     * put them in array list
      */
 
-    public void sumDaysWorked(){
+    public void findCommonDaysWorked() {
+        long sumDays = 0;
 
-        for(int i = 1; i< commonProjectsList.size(); i++) {
-            if (commonProjectsList.get(i-1).projectId.equals(commonProjectsList.get(i).projectId)) {
-                commonProjectsList.get(i-1).sumDays = commonProjectsList.get(i).days+ commonProjectsList.get(i-1).days;
+        for (int i = 0; i < commonProjectsList.size(); i++) {
+            for (int j = i + 1; j < commonProjectsList.size(); j++) {
+                if (commonProjectsList.get(i).projectId.equals(commonProjectsList.get(j).projectId)) {
+                    if (commonProjectsList.get(i).days > commonProjectsList.get(j).days) {
+                        sumDays = commonProjectsList.get(j).days;
+                    } else if (commonProjectsList.get(i).days == commonProjectsList.get(j).days) {
+                                sumDays = commonProjectsList.get(i).days;
+                    } else if (commonProjectsList.get(i).days < commonProjectsList.get(j).days)
+                                sumDays = commonProjectsList.get(i).days;
+
+                    String id1 = commonProjectsList.get(i).employeeId;
+                    String id2 = commonProjectsList.get(j).employeeId;
+                    String project = commonProjectsList.get(i).projectId;
+
+                    employeesList.add(emp = new Employee(id1, id2, project, sumDays));
+                }
             }
         }
-    }//end sumDaysWorked
+
+        printAfterProcessing();
+    }//end findCommonDaysWorked
 
     /**
-     * Print information for all employees
+     * Sum days worked of employees which work together in common projects
      */
-    public void printInformation(){
 
-        for(Employee element : commonProjectsList){
-            System.out.println(element.employeeId + " " + element.projectId + " " + element.dateFromStr +" "
-                    + element.dateToStr + " " + (int)element.days + " " + (int)element.sumDays);
+    public void sumDaysWorkedTogether() {
+
+        for (int i = 0; i < employeesList.size(); i++) {
+            for (int j = i + 1; j < employeesList.size(); j++){
+                if ((employeesList.get(i).empIdNew1.equals(employeesList.get(j).empIdNew1))
+                        && employeesList.get(i).empIdnew2.equals(employeesList.get(j).empIdnew2)){
+
+                    employeesList.get(i).sumDaysWorkded = employeesList.get(i).sumDaysWorkded + employeesList.get(j).sumDaysWorkded;
+                }
+            }
+        }
+    }//end sumDaysWorkedTogether
+
+
+    /**
+     * sort by days worked
+     */
+    public void sortByDaysWorked() {
+
+        Comparator<Employee> bySuma = (p1, p2) -> Long.compare(p1.sumDaysWorkded, p2.sumDaysWorkded);
+        employeesList.sort(bySuma.reversed());
+
+    } // end sortByDaysWorked
+
+    /**
+     * Finds the pair of employees which work for the longest time together
+     */
+
+    public void fintPairEmployees(){
+
+
+        Long max = employeesList.get(0).sumDaysWorkded;
+        int index = 0;
+
+        for (int i = 0; i < employeesList.size(); i++) {
+            if (employeesList.get(i).sumDaysWorkded > max) {
+                max = employeesList.get(i).sumDaysWorkded;
+                index = i;
+            }
+        }
+
+        // add the projects that the pair of employees worked together
+        for(int i=0; i<employeesList.size(); i++){
+            if((employeesList.get(index).empIdNew1.equals(employeesList.get(i).empIdNew1) && employeesList.get(index).empIdnew2.equals(employeesList.get(i).empIdnew2))){
+                resultList.add(employeesList.get(i));
+            }
+
+        }
+
+    } // end findPairEmployees
+
+    public void printAfterProcessing(){
+
+        for (int i = 0; i < employeesList.size(); i++) {
+            System.out.println(employeesList.get(i).empIdNew1 + " " + employeesList.get(i).empIdnew2 + " " + employeesList.get(i).projectIdNew + " "
+                               + employeesList.get(i).sumDaysWorkded);
+        }
+    }//end printAfterProcessing
+
+    public void printResultList(){
+
+        for(int i=0; i<resultList.size(); i++){
+            System.out.println(resultList.get(i).empIdNew1 + " " + resultList.get(i).empIdnew2 + " "
+                               + resultList.get(i).projectIdNew );
         }
     }
 
-    /**
-     * we are looking for the pair of employees who have worked together for the longest time together on a common project
-     * finding the greatest sum of days worked together.
-     * Take the highest sum index and print information about the employee with this index and the employee after it.
-     * Add the employees in the result list.
-     */
-    public void findingPairOfEmployees(){
-
-        double maxSumDays = 0;
-        int indexEmployee =0;
-        for(int i = 0; i < commonProjectsList.size(); i++){
-            if(commonProjectsList.get(i).sumDays >maxSumDays){
-                maxSumDays = commonProjectsList.get(i).sumDays;
-                indexEmployee = i;
-            }
-        }
-
-        System.out.println("Employees who have worked the most together in a joint projectId");
-
-        System.out.println( commonProjectsList.get(indexEmployee).employeeId + " " + commonProjectsList.get(indexEmployee).projectId
-                + " " + commonProjectsList.get(indexEmployee).dateFromStr + " " + commonProjectsList.get(indexEmployee).dateToStr + " "
-                + (int) commonProjectsList.get(indexEmployee).days + " " + (int) commonProjectsList.get(indexEmployee).sumDays);
-
-        System.out.println(commonProjectsList.get(indexEmployee+1).employeeId + " " + commonProjectsList.get(indexEmployee+1).projectId + " "
-                + commonProjectsList.get(indexEmployee+1).dateFromStr + " " + commonProjectsList.get(indexEmployee+1).dateToStr + " "
-                + (int) commonProjectsList.get(indexEmployee+1).days + " " + (int) commonProjectsList.get(indexEmployee).sumDays);
-
-
-        resultList.add(commonProjectsList.get(indexEmployee));
-        resultList.add(commonProjectsList.get(indexEmployee+1));
-
-    }//end findingPairOfEmployees
 }//end class
 
 
